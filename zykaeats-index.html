@@ -195,7 +195,7 @@ button{font-family:inherit}
 
 <nav id="nav">
   <div class="nav-brand">🔥 Zykaeats <span class="nav-tagline">Bangalore</span></div>
-  <button id="navCartBtn" onclick="openDrawer()">
+  <button id="navCartBtn">
     🛒 Cart <span id="navBadge">0</span>
   </button>
 </nav>
@@ -206,8 +206,8 @@ button{font-family:inherit}
     <h1 class="h1">Cloud kitchen<br>meals that feel<br><em>like home.</em></h1>
     <p class="h-p">Fresh, made-to-order food delivered across Bangalore. No aggregator fees — just great food at fair prices.</p>
     <div class="h-btns">
-      <button class="btn btn-f" onclick="scrollToMenu()">🍽 Browse Menu</button>
-      <button class="btn btn-w" onclick="openWADirect()">💬 WhatsApp Order</button>
+      <button class="btn btn-f" id="browsMenuBtn">🍽 Browse Menu</button>
+      <button class="btn btn-w" id="waDirectBtn">💬 WhatsApp Order</button>
     </div>
     <div class="h-stats">
       <div><div class="hs-n">4.8 ★</div><div class="hs-l">Avg rating</div></div>
@@ -256,28 +256,28 @@ button{font-family:inherit}
 </footer>
 
 <!-- Mobile FAB -->
-<button id="mFab" onclick="openDrawer()">
+<button id="mFab">
   <span id="mFabL">🛒 Cart</span><span id="mFabR">₹0</span>
 </button>
 
 <!-- Mobile Drawer -->
-<div id="mDOv" onclick="closeDrawerOut(event)">
+<div id="mDOv">
   <div id="mD"><div class="dpip"></div><div id="mDIn"></div></div>
 </div>
 
 <!-- WhatsApp Modal -->
-<div class="overlay" id="waModal" onclick="closeMod('waModal',event)">
+<div class="overlay" id="waModal">
   <div class="modal">
     <div class="mpip"></div>
     <div class="mhd">
       <div class="mtitle">Review Your Order</div>
-      <button class="mx" onclick="closeMod('waModal')">✕</button>
+      <button class="mx" id="waModalClose">✕</button>
     </div>
     <div class="mbody">
       <div class="wabox"><div class="walbl">WhatsApp Message</div><span id="waText"></span></div>
       <div class="mbtns">
-        <button class="copybtn" id="copyBtn" onclick="copyWA()">⎘ Copy</button>
-        <button class="pb pb-wa" onclick="sendWA()">💬 Open WhatsApp</button>
+        <button class="copybtn" id="copyBtn">⎘ Copy</button>
+        <button class="pb pb-wa" id="sendWABtn">💬 Open WhatsApp</button>
       </div>
     </div>
   </div>
@@ -309,7 +309,7 @@ button{font-family:inherit}
         <div class="ss"><div class="ss-ic">👨‍🍳</div><div class="ss-lb">Kitchen cooking</div></div>
         <div class="ss"><div class="ss-ic">🛵</div><div class="ss-lb">Out for delivery</div></div>
       </div>
-      <button class="btn btn-f" style="margin:0 auto" onclick="afterSuccess()">🍽 Order More</button>
+      <button class="btn btn-f" id="orderMoreBtn" style="margin:0 auto">🍽 Order More</button>
     </div>
   </div>
 </div>
@@ -372,8 +372,8 @@ function dishCard(it,i){
   const na=!it.available?`<span class="dbadge db-off">Sold out</span>`:'';
   const orig=it.origPrice?`<s>₹${it.origPrice}</s>`:'';
   const ctrl=inCart
-    ?`<div class="qc"><button class="qb minus" onclick="setQty('${it.id}',${qty-1})">−</button><span class="qn">${qty}</span><button class="qb" onclick="setQty('${it.id}',${qty+1})">+</button></div>`
-    :`<button class="add-btn" onclick="addItem('${it.id}')">+</button>`;
+    ?`<div class="qc"><button class="qb minus" data-action="qty" data-id="${it.id}" data-qty="${qty-1}">−</button><span class="qn">${qty}</span><button class="qb" data-action="qty" data-id="${it.id}" data-qty="${qty+1}">+</button></div>`
+    :`<button class="add-btn" data-action="add" data-id="${it.id}">+</button>`;
   return`<div class="dish${inCart?' in-cart':''}${!it.available?' sold-out':''}" style="animation-delay:${i*.04}s">
     <div class="dish-top"><span class="dish-em">${it.emoji}</span><div>${badge}${na}</div></div>
     <div class="dish-nm">${it.name}</div>
@@ -388,7 +388,7 @@ function cartHTML(){
   const free=CFG.freeDeliveryAt,pct=Math.min((sub/free)*100,100);
   const fLbl=sub>=free?'🎉 Free delivery unlocked!':`Add ₹${free-sub} for free delivery`;
   const itemsHTML=items.length
-    ?`<div class="citems">${items.map(i=>`<div class="citem"><span class="ci-em">${i.emoji}</span><div class="ci-inf"><div class="ci-nm">${i.name}</div><div class="ci-pr">₹${i.price*i.qty}</div></div><div class="ciqc"><button class="ciq" onclick="setQty('${i.id}',${i.qty-1})">−</button><span class="ciq-n">${i.qty}</span><button class="ciq" onclick="setQty('${i.id}',${i.qty+1})">+</button></div></div>`).join('')}</div>`
+    ?`<div class="citems">${items.map(i=>`<div class="citem"><span class="ci-em">${i.emoji}</span><div class="ci-inf"><div class="ci-nm">${i.name}</div><div class="ci-pr">₹${i.price*i.qty}</div></div><div class="ciqc"><button class="ciq" data-action="qty" data-id="${i.id}" data-qty="${i.qty-1}">−</button><span class="ciq-n">${i.qty}</span><button class="ciq" data-action="qty" data-id="${i.id}" data-qty="${i.qty+1}">+</button></div></div>`).join('')}</div>`
     :`<div class="cempty"><div class="ei">🛒</div>Your cart is empty.<br>Add items from the menu!</div>`;
   const bottomHTML=!items.length?'':`
     <div class="osum">
@@ -406,12 +406,12 @@ function cartHTML(){
     </div>
     <div class="pw">
       ${CFG.razorpayEnabled
-        ?`<button class="pb pb-rzp" onclick="saveCust();startRazorpay()">💳 Pay ₹${tot} via Razorpay</button>`
+        ?`<button class="pb pb-rzp" data-action="razorpay">💳 Pay ₹${tot} via Razorpay</button>`
         :`<button class="pb pb-rzp" disabled title="Razorpay not configured" style="opacity:.5;cursor:not-allowed">💳 Razorpay (configure in .env)</button>`}
       <div class="pay-or">or</div>
-      <button class="pb pb-wa" onclick="saveCust();openWAPreview()">💬 Order via WhatsApp</button>
+      <button class="pb pb-wa" data-action="whatsapp">💬 Order via WhatsApp</button>
     </div>`;
-  return`<div class="cp-hd"><span>Your Order${items.length?` (${itemCount()})`:''}</span>${items.length?`<button class="cp-clr" onclick="clearCart()">Clear</button>`:''}</div>
+  return`<div class="cp-hd"><span>Your Order${items.length?` (${itemCount()})`:''}</span>${items.length?`<button class="cp-clr" data-action="clear">Clear</button>`:''}</div>
     <div class="fbar"><div class="fb-r"><span class="fb-l">${fLbl}</span><span class="fb-v">₹${sub} / ₹${free}</span></div><div class="fb-t"><div class="fb-f" style="width:${pct}%"></div></div></div>
     ${itemsHTML}${bottomHTML}`;
 }
@@ -493,8 +493,44 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 /* ── MISC ── */
 function scrollToMenu(){document.getElementById('catBar').scrollIntoView({behavior:'smooth',block:'start'});}
 
+/* ── EVENT DELEGATION for dynamic cart & menu elements ── */
+function handleDelegatedClick(e){
+  const btn=e.target.closest('[data-action]');
+  if(!btn)return;
+  const action=btn.dataset.action;
+  if(action==='add'){addItem(btn.dataset.id);}
+  else if(action==='qty'){setQty(btn.dataset.id,Number(btn.dataset.qty));}
+  else if(action==='clear'){clearCart();}
+  else if(action==='razorpay'){saveCust();startRazorpay();}
+  else if(action==='whatsapp'){saveCust();openWAPreview();}
+}
+document.getElementById('menuCol').addEventListener('click',handleDelegatedClick);
+document.getElementById('cpInner').addEventListener('click',handleDelegatedClick);
+document.getElementById('mDIn').addEventListener('click',handleDelegatedClick);
+
+/* ── STATIC ELEMENT EVENT LISTENERS ── */
+document.addEventListener('DOMContentLoaded',function(){
+  // Nav & hero
+  document.getElementById('navCartBtn').addEventListener('click',openDrawer);
+  document.getElementById('browsMenuBtn').addEventListener('click',scrollToMenu);
+  document.getElementById('waDirectBtn').addEventListener('click',openWADirect);
+
+  // Mobile FAB & drawer
+  document.getElementById('mFab').addEventListener('click',openDrawer);
+  document.getElementById('mDOv').addEventListener('click',function(e){if(e.target===this)closeDrawer();});
+
+  // WhatsApp modal
+  document.getElementById('waModal').addEventListener('click',function(e){if(e.target===this)closeMod('waModal');});
+  document.getElementById('waModalClose').addEventListener('click',function(){closeMod('waModal');});
+  document.getElementById('copyBtn').addEventListener('click',copyWA);
+  document.getElementById('sendWABtn').addEventListener('click',sendWA);
+
+  // Success modal
+  document.getElementById('orderMoreBtn').addEventListener('click',afterSuccess);
+});
+
 /* ── BOOTSTRAP ── */
-const FALLBACK_MENU=[
+bootstrap();[
   {id:'r1',cat:'biryani',emoji:'🍗',name:'Chicken Dum Biryani',desc:'Slow-cooked basmati with tender chicken, saffron & whole spices',price:280,badge:'best',badgeLabel:'Bestseller',available:true,sortOrder:1},
   {id:'r2',cat:'biryani',emoji:'🐑',name:'Mutton Biryani',desc:'Rich slow-cooked mutton with caramelised onions & rose water',price:360,available:true,sortOrder:2},
   {id:'r3',cat:'biryani',emoji:'🌱',name:'Veg Biryani',desc:'Fragrant basmati with seasonal vegetables, cashews & herbs',price:180,badge:'veg',badgeLabel:'Veg',available:true,sortOrder:3},
@@ -521,7 +557,6 @@ async function bootstrap(){
   if(!MENU.length){MENU=FALLBACK_MENU;CATS=[...new Set(MENU.map(m=>m.cat))];}
   renderCatBar();renderAll();
 }
-bootstrap();
 </script>
 </body>
 </html>

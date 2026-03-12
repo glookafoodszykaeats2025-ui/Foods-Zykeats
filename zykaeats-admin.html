@@ -134,8 +134,8 @@ input:checked+.toggle-track::before{transform:translateX(18px)}
   <div class="login-box">
     <div class="login-brand">🔥 Zykaeats</div>
     <div class="login-sub">Admin Panel — Enter password to continue</div>
-    <input class="login-inp" type="password" id="pwInput" placeholder="Admin password" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="login-btn" onclick="doLogin()">Login →</button>
+    <input class="login-inp" type="password" id="pwInput" placeholder="Admin password">
+    <button class="login-btn" id="loginBtn">Login →</button>
     <div class="login-err" id="loginErr"></div>
   </div>
 </div>
@@ -145,10 +145,10 @@ input:checked+.toggle-track::before{transform:translateX(18px)}
   <nav class="sidebar">
     <div class="sb-brand">🔥 Zykaeats Admin</div>
     <div class="sb-lbl">Management</div>
-    <div class="sb-item active" onclick="showPage('dashboard',this)"><span class="sb-item-ic">📊</span>Dashboard</div>
-    <div class="sb-item" onclick="showPage('orders',this)"><span class="sb-item-ic">📦</span>Orders</div>
-    <div class="sb-item" onclick="showPage('menu',this)"><span class="sb-item-ic">🍽</span>Menu Items</div>
-    <div class="sb-logout"><button onclick="logout()">🚪 Logout</button></div>
+    <div class="sb-item active" data-page="dashboard"><span class="sb-item-ic">📊</span>Dashboard</div>
+    <div class="sb-item" data-page="orders"><span class="sb-item-ic">📦</span>Orders</div>
+    <div class="sb-item" data-page="menu"><span class="sb-item-ic">🍽</span>Menu Items</div>
+    <div class="sb-logout"><button id="logoutBtn">🚪 Logout</button></div>
   </nav>
 
   <main class="main">
@@ -162,7 +162,7 @@ input:checked+.toggle-track::before{transform:translateX(18px)}
       </div>
       <div class="stats-row" id="dashStats"></div>
       <div class="card">
-        <div class="card-hd"><div class="card-title">📦 Recent Orders</div><button class="btn btn-ghost btn-sm" onclick="loadOrders();showPage('orders',document.querySelector('.sb-item:nth-child(3)'))">View all</button></div>
+        <div class="card-hd"><div class="card-title">📦 Recent Orders</div><button class="btn btn-ghost btn-sm" id="viewAllOrdersBtn">View all</button></div>
         <div class="table-wrap"><table id="dashOrderTable"><thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Time</th></tr></thead><tbody id="dashOrderBody"></tbody></table></div>
       </div>
     </div>
@@ -178,7 +178,7 @@ input:checked+.toggle-track::before{transform:translateX(18px)}
         <div class="card-hd">
           <div class="card-title">Order List</div>
           <div style="display:flex;gap:8px">
-            <select id="orderFilter" class="status-sel" onchange="filterOrders()" style="padding:8px 12px;font-size:13px">
+            <select id="orderFilter" class="status-sel" style="padding:8px 12px;font-size:13px">
               <option value="all">All orders</option>
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
@@ -187,7 +187,7 @@ input:checked+.toggle-track::before{transform:translateX(18px)}
               <option value="delivered">Delivered</option>
               <option value="cancelled">Cancelled</option>
             </select>
-            <button class="btn btn-ghost btn-sm" onclick="loadOrders()">↺ Refresh</button>
+            <button class="btn btn-ghost btn-sm" id="refreshOrdersBtn">↺ Refresh</button>
           </div>
         </div>
         <div class="table-wrap"><table><thead><tr><th>Order ID</th><th>Customer</th><th>Phone</th><th>Area</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Time</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
@@ -204,7 +204,7 @@ input:checked+.toggle-track::before{transform:translateX(18px)}
       <div class="card">
         <div class="card-hd">
           <div class="card-title">Menu Items</div>
-          <button class="btn btn-fire btn-sm" onclick="openItemModal()">+ Add Item</button>
+          <button class="btn btn-fire btn-sm" id="addItemBtn">+ Add Item</button>
         </div>
         <div class="table-wrap">
           <table><thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Badge</th><th>Available</th><th>Actions</th></tr></thead>
@@ -217,11 +217,11 @@ input:checked+.toggle-track::before{transform:translateX(18px)}
 </div>
 
 <!-- ITEM MODAL -->
-<div class="overlay" id="itemModal" onclick="closeItemModal(event)">
-  <div class="modal" onclick="event.stopPropagation()">
+<div class="overlay" id="itemModal">
+  <div class="modal" id="itemModalInner">
     <div class="modal-hd">
       <div class="modal-title" id="itemModalTitle">Add Menu Item</div>
-      <button class="modal-x" onclick="closeItemModal()">✕</button>
+      <button class="modal-x" id="modalCloseX">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="itemId">
@@ -261,8 +261,8 @@ input:checked+.toggle-track::before{transform:translateX(18px)}
         <span style="font-size:13px;font-weight:600;color:var(--ink2)">Available for ordering</span>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button class="btn btn-ghost" onclick="closeItemModal()">Cancel</button>
-        <button class="btn btn-fire" id="itemSaveBtn" onclick="saveItem()">Save Item</button>
+        <button class="btn btn-ghost" id="modalCancelBtn">Cancel</button>
+        <button class="btn btn-fire" id="itemSaveBtn">Save Item</button>
       </div>
     </div>
   </div>
@@ -356,12 +356,16 @@ function filterOrders(){
     <td class="td-bold">₹${o.total}</td>
     <td>${payPill(o.paymentStatus)}</td>
     <td>
-      <select class="status-sel" onchange="updateStatus('${o.orderId}',this.value)">
+      <select class="status-sel order-status-sel" data-id="${o.orderId}">
         ${['pending','confirmed','preparing','ready','out_for_delivery','delivered','cancelled'].map(s=>`<option value="${s}"${o.status===s?' selected':''}>${s.replace(/_/g,' ')}</option>`).join('')}
       </select>
     </td>
     <td style="font-size:11px;color:var(--muted)">${new Date(o.createdAt).toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'})}</td>
   </tr>`).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:32px">No orders found</td></tr>';
+
+  document.querySelectorAll('.order-status-sel').forEach(sel=>{
+    sel.addEventListener('change',function(){updateStatus(this.dataset.id,this.value);});
+  });
 }
 async function updateStatus(id,status){
   const res=await fetch(`/api/orders/${id}/status`,{method:'PATCH',headers:{'Content-Type':'application/json','x-admin-token':TOKEN},body:JSON.stringify({status})});
@@ -385,17 +389,28 @@ function renderMenuTable(){
     <td>${it.badge?`<span class="pill pill-amber">${it.badgeLabel}</span>`:'<span style="color:var(--muted);font-size:12px">—</span>'}</td>
     <td>
       <div class="toggle-wrap">
-        <label class="toggle"><input type="checkbox" ${it.available?'checked':''} onchange="toggleAvail('${it.id}',this.checked)"><div class="toggle-track"></div></label>
+        <label class="toggle"><input type="checkbox" class="avail-toggle" data-id="${it.id}" ${it.available?'checked':''}><div class="toggle-track"></div></label>
         <span style="font-size:12px;color:${it.available?'var(--green)':'var(--muted)'};font-weight:600">${it.available?'Yes':'No'}</span>
       </div>
     </td>
     <td>
       <div style="display:flex;gap:6px">
-        <button class="btn btn-ghost btn-sm" onclick="openItemModal(${JSON.stringify(it).replace(/"/g,'&quot;')})">✏️ Edit</button>
-        <button class="btn btn-red btn-sm" onclick="deleteItem('${it.id}','${it.name}')">🗑</button>
+        <button class="btn btn-ghost btn-sm edit-item-btn" data-item="${encodeURIComponent(JSON.stringify(it))}">✏️ Edit</button>
+        <button class="btn btn-red btn-sm delete-item-btn" data-id="${it.id}" data-name="${it.name}">🗑</button>
       </div>
     </td>
   </tr>`).join('');
+
+  // Attach listeners to dynamically created elements
+  document.querySelectorAll('.avail-toggle').forEach(cb=>{
+    cb.addEventListener('change',function(){toggleAvail(this.dataset.id,this.checked);});
+  });
+  document.querySelectorAll('.edit-item-btn').forEach(btn=>{
+    btn.addEventListener('click',function(){openItemModal(JSON.parse(decodeURIComponent(this.dataset.item)));});
+  });
+  document.querySelectorAll('.delete-item-btn').forEach(btn=>{
+    btn.addEventListener('click',function(){deleteItem(this.dataset.id,this.dataset.name);});
+  });
 }
 async function toggleAvail(id,val){
   await fetch(`/api/menu/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','x-admin-token':TOKEN},body:JSON.stringify({available:val})});
@@ -454,6 +469,42 @@ async function saveItem(){
 
 /* ── INIT ── */
 function init(){loadDashboard();loadMenu();}
+
+/* ── EVENT LISTENERS ── */
+document.addEventListener('DOMContentLoaded',function(){
+  // Login
+  document.getElementById('loginBtn').addEventListener('click',doLogin);
+  document.getElementById('pwInput').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+  // Logout
+  document.getElementById('logoutBtn').addEventListener('click',logout);
+
+  // Sidebar nav
+  document.querySelectorAll('.sb-item[data-page]').forEach(function(item){
+    item.addEventListener('click',function(){showPage(this.dataset.page,this);});
+  });
+
+  // View all orders button on dashboard
+  document.getElementById('viewAllOrdersBtn').addEventListener('click',function(){
+    loadOrders();
+    const ordersNav=document.querySelector('.sb-item[data-page="orders"]');
+    showPage('orders',ordersNav);
+  });
+
+  // Orders filter & refresh
+  document.getElementById('orderFilter').addEventListener('change',filterOrders);
+  document.getElementById('refreshOrdersBtn').addEventListener('click',loadOrders);
+
+  // Menu add item
+  document.getElementById('addItemBtn').addEventListener('click',function(){openItemModal();});
+
+  // Modal close
+  document.getElementById('itemModal').addEventListener('click',function(e){if(e.target===this)closeItemModal();});
+  document.getElementById('itemModalInner').addEventListener('click',function(e){e.stopPropagation();});
+  document.getElementById('modalCloseX').addEventListener('click',closeItemModal);
+  document.getElementById('modalCancelBtn').addEventListener('click',closeItemModal);
+  document.getElementById('itemSaveBtn').addEventListener('click',saveItem);
+});
 </script>
 </body>
 </html>
